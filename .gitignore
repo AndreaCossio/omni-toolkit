@@ -39,3 +39,4 @@
 Plugin.txt
 out/*
 config.json
+*.bkp

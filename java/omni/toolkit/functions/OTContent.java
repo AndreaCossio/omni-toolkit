@@ -7,8 +7,8 @@ import com.appiancorp.suiteapi.common.Name;
 import com.appiancorp.suiteapi.content.Content;
 import com.appiancorp.suiteapi.content.ContentConstants;
 import com.appiancorp.suiteapi.content.ContentFilter;
-import com.appiancorp.suiteapi.content.ContentOutputStream;
 import com.appiancorp.suiteapi.content.ContentService;
+import com.appiancorp.suiteapi.content.ContentUploadOutputStream;
 import com.appiancorp.suiteapi.expression.annotations.Function;
 import com.appiancorp.suiteapi.expression.annotations.Parameter;
 import com.appiancorp.suiteapi.knowledge.Document;
@@ -173,7 +173,7 @@ public class OTContent {
             doc.setSecurity(ContentConstants.SEC_INH_ALL);
 
             /* Upload to Appian and write content */
-            ContentOutputStream outStr = cs.upload(doc, ContentConstants.UNIQUE_FOR_ALL);
+            ContentUploadOutputStream outStr = cs.uploadDocument(doc, ContentConstants.UNIQUE_FOR_ALL);
             byte[] fileContentBytes = content.getBytes();
             try {
                 outStr.write(fileContentBytes);
@@ -286,7 +286,7 @@ public class OTContent {
             newKcFolder.setDescription(description);
             newKcFolder.setParent(folder);
             newKcFolder.setSecurity(ContentConstants.SEC_INH_ALL);
-            
+
             /* Add folder on Application */
             Long newKcFolderId = cs.create(newKcFolder, ContentConstants.UNIQUE_FOR_ALL);
             String newKcFolderUuid = cs.getVersion(newKcFolderId, ContentConstants.VERSION_CURRENT).getUuid();

@@ -72,8 +72,12 @@ public class OTHelper {
     public static final String toCamelCase(String text) {
         String[] parts = text.split("_");
         String camelCaseString = "";
-        for (String part : parts) {
-            camelCaseString = camelCaseString + toProperCase(part);
+        for (int i=0; i<parts.length; i++) {
+            if (i==0) {
+                camelCaseString = camelCaseString + parts[i].toLowerCase();
+            } else {
+                camelCaseString = camelCaseString + toProperCase(parts[i]);
+            }
         }
         return camelCaseString;
     }
@@ -333,7 +337,6 @@ public class OTHelper {
         map.put(stringTypedValue("uuid"), stringTypedValue(content.getUuid()));
         map.put(stringTypedValue("url"), stringTypedValue(cs.getContentUrl(contentId)));
         map.put(stringTypedValue("opaqueUri"), stringTypedValue(cs.getOpaqueContentUri(contentId)));
-        map.put(stringTypedValue("internalFilename"), stringTypedValue(cs.getInternalFilename(contentId)));
         map.put(stringTypedValue("externalFilename"), stringTypedValue(cs.getExternalFilename(contentId)));
         return map;
     }

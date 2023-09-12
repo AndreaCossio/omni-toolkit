@@ -4,8 +4,8 @@ import com.appiancorp.suiteapi.applications.Application;
 import com.appiancorp.suiteapi.applications.ApplicationService;
 import com.appiancorp.suiteapi.common.Name;
 import com.appiancorp.suiteapi.content.ContentConstants;
-import com.appiancorp.suiteapi.content.ContentOutputStream;
 import com.appiancorp.suiteapi.content.ContentService;
+import com.appiancorp.suiteapi.content.ContentUploadOutputStream;
 import com.appiancorp.suiteapi.knowledge.Document;
 import com.appiancorp.suiteapi.knowledge.FolderDataType;
 import com.appiancorp.suiteapi.process.ApplicationDataType;
@@ -53,7 +53,7 @@ public class OTCreateDocument extends AppianSmartService {
         doc.setSecurity(ContentConstants.SEC_INH_ALL);
         
         try {
-            ContentOutputStream outStr = this.contentService.upload(doc, ContentConstants.UNIQUE_FOR_ALL);
+            ContentUploadOutputStream outStr = this.contentService.uploadDocument(doc, ContentConstants.UNIQUE_FOR_ALL);
             byte[] fileContentBytes = this.content.getBytes();
             try {
                 outStr.write(fileContentBytes);

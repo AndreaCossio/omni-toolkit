@@ -5,7 +5,7 @@
         <vendor name="{{.Vendor.Name}}" url="{{.Vendor.Url}}" />
         <support supported="{{.Support.Supported}}" email="{{.Support.Email}}" />
         <version>{{.Version}}</version>
-        <application-version min="23.1.0"/>
+        <application-version min="{{.MinVersion}}"/>
     </plugin-info>{{end}}
 {{if .FunctionCategories}}{{range .FunctionCategories}}
     <function-category key="{{.Key}}" name="{{.Name}}" />

@@ -16,7 +16,8 @@
       "Supported": "true",
       "Email": "email@aa.it"
     },
-    "Version": "1.0.0"
+    "Version": "1.0.0",
+    "MinVersion": "23.2.0"
   },
   "FunctionCategories": [
     {
