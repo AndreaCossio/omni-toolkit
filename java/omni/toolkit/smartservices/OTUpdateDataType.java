@@ -48,9 +48,10 @@ public class OTUpdateDataType extends AppianSmartService {
     @Override
     public void run() throws SmartServiceException  {
         
+        /* XSD of the table */
+        String xsd = OTHelper.getTableXsd(this.context, this.dataSource, this.tableName, this.targetNamespace, this.name, this.description);
+        
         try {
-            /* XSD of the table */
-            String xsd = OTHelper.getTableXsd(this.context, this.dataSource, this.tableName, this.targetNamespace, this.name, this.description);
 
             /* Exit if null */
             if (xsd != null) {

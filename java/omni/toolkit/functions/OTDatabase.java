@@ -6,6 +6,7 @@ import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -31,13 +32,18 @@ public class OTDatabase {
             Context ctx,
             @Parameter @Name("dataSource") String dataSource,
             @Parameter @Name("tableName") String tableName) {
+        
+        /* Vars */
+        Connection conn = null;
+        ResultSet rsColumns = null;
+        ArrayList<Map<Object, Object>> resultList = null;
                 
         try {
             /* Connection to db */
-            Connection conn = OTHelper.getConnection(ctx, dataSource);
+            conn = OTHelper.getConnection(ctx, dataSource);
 
             /* Get columns of the table */
-            ResultSet rsColumns = OTHelper.getColumnsOfTable(conn, tableName);
+            rsColumns = OTHelper.getColumnsOfTable(conn, tableName);
 
             /* Return early if empty */
             if (rsColumns.next() == false) {
@@ -48,7 +54,7 @@ public class OTDatabase {
             ResultSetMetaData rsmd = rsColumns.getMetaData();
 
             /* Result container */
-            ArrayList<Map<Object, Object>> resultList = new ArrayList<Map<Object, Object>>();
+            resultList = new ArrayList<Map<Object, Object>>();
 
             /* Iterate over columns */
             do {
@@ -61,16 +67,24 @@ public class OTDatabase {
 
                 resultList.add(row);
             } while (rsColumns.next());
-
-            /* Close connection */
-            conn.close();
-
-            /* Return list of dictionaries */
-            return new TypedValue((long) AppianType.LIST_OF_MAP, resultList.toArray(new Map[resultList.size()]));
         } catch (Exception e) {
             OTHelper.logError(e.getMessage());
             return null;
+        } finally {
+            if (rsColumns != null) {
+                try {
+                    rsColumns.close();
+                } catch (SQLException e) { /* Ignored */}
+            }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) { /* Ignored */}
+            }
         }
+
+        /* Return list of dictionaries */
+        return new TypedValue((long) AppianType.LIST_OF_MAP, resultList.toArray(new Map[resultList.size()]));
     }
 
     @Function
@@ -82,16 +96,8 @@ public class OTDatabase {
             @Parameter @Name("name") String name,
             @Parameter @Name("description") String description) {
 
-        try {
-            /* XSD of the table */
-            String xsd = OTHelper.getTableXsd(ctx, dataSource, tableName, targetNamespace, name, description);
-            
-            /* Return as string */
-            return xsd;
-        } catch (Exception e) {
-            OTHelper.logError(e.getMessage());
-            return null;
-        }
+        /* XSD of the table */
+        return OTHelper.getTableXsd(ctx, dataSource, tableName, targetNamespace, name, description);
     }
 
     @Function
@@ -104,15 +110,15 @@ public class OTDatabase {
             @Parameter @Name("name") String name,
             @Parameter @Name("description") String description) {
         
+        /* XSD of the table */
+        String xsd = OTHelper.getTableXsd(ctx, dataSource, tableName, targetNamespace, name, description);
+
+        /* Exit if null */
+        if (xsd == null) {
+            return null;
+        }
+        
         try {
-            /* XSD of the table */
-            String xsd = OTHelper.getTableXsd(ctx, dataSource, tableName, targetNamespace, name, description);
-
-            /* Exit if null */
-            if (xsd == null) {
-                return null;
-            }
-
             /* Create input stream from xsd string */
             InputStream stream = new ByteArrayInputStream(xsd.getBytes(StandardCharsets.UTF_8));
 
@@ -131,13 +137,18 @@ public class OTDatabase {
     public String[] otGetDataSourceTables(
             Context ctx,
             @Parameter @Name("dataSource") String dataSource) {
+        
+        /* Vars */
+        Connection conn = null;
+        ResultSet rsTables = null;
+        ArrayList<String> result = null;
                 
         try {
             /* Connection to db */
-            Connection conn = OTHelper.getConnection(ctx, dataSource);
+            conn = OTHelper.getConnection(ctx, dataSource);
 
             /* Get tables of the data source */
-            ResultSet rsTables = OTHelper.getTablesOfDataSource(conn);
+            rsTables = OTHelper.getTablesOfDataSource(conn);
 
             /* Return early if empty */
             if (rsTables.next() == false) {
@@ -145,19 +156,27 @@ public class OTDatabase {
             }
             
             /* Iterate over tables */
-            ArrayList<String> result = new ArrayList<>();
+            result = new ArrayList<>();
             do {
                 result.add(rsTables.getString("TABLE_NAME"));
             } while (rsTables.next());
-
-            /* Close connection */
-            conn.close();
-
-            /* Return list */
-            return result.toArray(new String[0]);
         } catch (Exception e) {
             OTHelper.logError(e.getMessage());
             return null;
+        } finally {
+            if (rsTables != null) {
+                try {
+                    rsTables.close();
+                } catch (SQLException e) { /* Ignored */}
+            }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) { /* Ignored */}
+            }
         }
+
+        /* Return list */
+        return result.toArray(new String[0]);
     }
 }

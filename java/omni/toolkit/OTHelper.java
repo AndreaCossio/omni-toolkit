@@ -208,96 +208,116 @@ public class OTHelper {
 
     /* Convert table info to xsd */
     public static final String getTableXsd(Context ctx, String dataSource, String tableName, String targetNamespace,
-            String name, String description) throws Exception {
+            String name, String description) {
+        
+        /* Vars */
+        Connection conn = null;
+        ResultSet rsColumns = null;
+        Document xsdDoc = null;
+                
         /* Connection to db */
-        Connection conn = getConnection(ctx, dataSource);
+        try {
+            conn = getConnection(ctx, dataSource);
 
-        /* Get columns of the table */
-        ResultSet rsColumns = getColumnsOfTable(conn, tableName);
+            /* Get columns of the table */
+            rsColumns = getColumnsOfTable(conn, tableName);
 
-        /* Return early if empty */
-        if (rsColumns.next() == false) {
+            /* Return early if empty */
+            if (rsColumns.next() == false) {
+                return null;
+            }
+
+            /* Create xsd document */
+            xsdDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
+
+            /* Schema */
+            Element rootElement = xsdDoc.createElement("xsd:schema");
+            rootElement.setAttribute("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
+            rootElement.setAttribute("xmlns:tns", targetNamespace);
+            rootElement.setAttribute("targetNamespace", targetNamespace);
+            xsdDoc.appendChild(rootElement);
+
+            /* Name */
+            Element complexTypeElement = xsdDoc.createElement("xsd:complexType");
+            complexTypeElement.setAttribute("name", name);
+            rootElement.appendChild(complexTypeElement);
+
+            /* Annotation */
+            Element annotationElement = xsdDoc.createElement("xsd:annotation");
+            complexTypeElement.appendChild(annotationElement);
+
+            /* AppInfo */
+            Element appInfoElement = xsdDoc.createElement("xsd:appinfo");
+            appInfoElement.setAttribute("source", "appian.jpa");
+            appInfoElement.setTextContent("@Table(name=\"" + tableName + "\")");
+            annotationElement.appendChild(appInfoElement);
+
+            /* Description */
+            Element documentationElement = xsdDoc.createElement("xsd:documentation");
+            Node cdata = xsdDoc.createCDATASection(description);
+            documentationElement.appendChild(cdata);
+            annotationElement.appendChild(documentationElement);
+
+            /* Sequence to hold fields */
+            Element sequenceElement = xsdDoc.createElement("xsd:sequence");
+            complexTypeElement.appendChild(sequenceElement);
+
+            /* Iterate over columns */
+            do {
+                String columnName = rsColumns.getString("COLUMN_NAME");
+                String isNullable = rsColumns.getString("IS_NULLABLE");
+                String dataType = rsColumns.getString("TYPE_NAME");
+                String isAutoIncrement = rsColumns.getString("IS_AUTOINCREMENT");
+                String isGeneratedColumn = rsColumns.getString("IS_GENERATEDCOLUMN");
+                String columnSize = rsColumns.getString("COLUMN_SIZE");
+
+                /* Column element */
+                Element element = xsdDoc.createElement("xsd:element");
+                element.setAttribute("name", toCamelCase(columnName));
+                element.setAttribute("type", "xsd:" + getXmlDataType(dataType));
+                element.setAttribute("nillable", "true");
+
+                /* Column annotation */
+                Element annotation = xsdDoc.createElement("xsd:annotation");
+                element.appendChild(annotation);
+
+                /* Column appInfo */
+                Element app = xsdDoc.createElement("xsd:appinfo");
+                app.setAttribute("source", "appian.jpa");
+                String s = generateAppInfoText(
+                        columnName,
+                        dataType,
+                        columnName.toLowerCase().equals("id"),
+                        isGeneratedColumn.equalsIgnoreCase("yes") || isAutoIncrement.equalsIgnoreCase("yes"),
+                        isNullable.equalsIgnoreCase("yes"),
+                        columnSize == null ? 0 : Integer.parseInt(columnSize));
+                app.setTextContent(s);
+                annotation.appendChild(app);
+                sequenceElement.appendChild(element);
+            } while (rsColumns.next());
+        } catch (Exception e) {
+            logError(e.getMessage());
             return null;
+        } finally {
+            if (rsColumns != null) {
+                try {
+                    rsColumns.close();
+                } catch (SQLException e) { /* Ignored */}
+            }
+            if (conn != null) {
+                try {
+                    conn.close();
+                } catch (SQLException e) { /* Ignored */}
+            }
         }
-
-        /* Create xsd document */
-        Document xsdDoc = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-
-        /* Schema */
-        Element rootElement = xsdDoc.createElement("xsd:schema");
-        rootElement.setAttribute("xmlns:xsd", "http://www.w3.org/2001/XMLSchema");
-        rootElement.setAttribute("xmlns:tns", targetNamespace);
-        rootElement.setAttribute("targetNamespace", targetNamespace);
-        xsdDoc.appendChild(rootElement);
-
-        /* Name */
-        Element complexTypeElement = xsdDoc.createElement("xsd:complexType");
-        complexTypeElement.setAttribute("name", name);
-        rootElement.appendChild(complexTypeElement);
-
-        /* Annotation */
-        Element annotationElement = xsdDoc.createElement("xsd:annotation");
-        complexTypeElement.appendChild(annotationElement);
-
-        /* AppInfo */
-        Element appInfoElement = xsdDoc.createElement("xsd:appinfo");
-        appInfoElement.setAttribute("source", "appian.jpa");
-        appInfoElement.setTextContent("@Table(name=\"" + tableName + "\")");
-        annotationElement.appendChild(appInfoElement);
-
-        /* Description */
-        Element documentationElement = xsdDoc.createElement("xsd:documentation");
-        Node cdata = xsdDoc.createCDATASection(description);
-        documentationElement.appendChild(cdata);
-        annotationElement.appendChild(documentationElement);
-
-        /* Sequence to hold fields */
-        Element sequenceElement = xsdDoc.createElement("xsd:sequence");
-        complexTypeElement.appendChild(sequenceElement);
-
-        /* Iterate over columns */
-        do {
-            String columnName = rsColumns.getString("COLUMN_NAME");
-            String isNullable = rsColumns.getString("IS_NULLABLE");
-            String dataType = rsColumns.getString("TYPE_NAME");
-            String isAutoIncrement = rsColumns.getString("IS_AUTOINCREMENT");
-            String isGeneratedColumn = rsColumns.getString("IS_GENERATEDCOLUMN");
-            String columnSize = rsColumns.getString("COLUMN_SIZE");
-
-            /* Column element */
-            Element element = xsdDoc.createElement("xsd:element");
-            element.setAttribute("name", toCamelCase(columnName));
-            element.setAttribute("type", "xsd:" + getXmlDataType(dataType));
-            element.setAttribute("nillable", "true");
-
-            /* Column annotation */
-            Element annotation = xsdDoc.createElement("xsd:annotation");
-            element.appendChild(annotation);
-
-            /* Column appInfo */
-            Element app = xsdDoc.createElement("xsd:appinfo");
-            app.setAttribute("source", "appian.jpa");
-            String s = generateAppInfoText(
-                    columnName,
-                    dataType,
-                    columnName.toLowerCase().equals("id"),
-                    isGeneratedColumn.equalsIgnoreCase("yes") || isAutoIncrement.equalsIgnoreCase("yes"),
-                    isNullable.equalsIgnoreCase("yes"),
-                    columnSize == null ? 0 : Integer.parseInt(columnSize));
-            app.setTextContent(s);
-            annotation.appendChild(app);
-            sequenceElement.appendChild(element);
-        } while (rsColumns.next());
-
-        /* Close connection */
-        conn.close();
 
         /* Return as string */
         return xsdDocToString(xsdDoc);
     }
 
     /* Content Attributes */
-    public static final Map<Object, Object> createContentAttributesMap(ContentService cs, Content content) throws Exception {
+    public static final Map<Object, Object> createContentAttributesMap(ContentService cs, Content content)
+            throws Exception {
         Map<Object, Object> map = new HashMap<>();
         Long contentId = content.getId();
         map.put(stringTypedValue("name"), stringTypedValue(content.getDisplayName()));
@@ -343,15 +363,13 @@ public class OTHelper {
         map.put(stringTypedValue("id"), intTypedValue(td.getId()));
         map.put(stringTypedValue("acceptedTime"), timestampTypedValue(td.getAcceptedTime()));
         map.put(stringTypedValue("assignedTime"), timestampTypedValue(td.getAssignedTime()));
-        map.put(stringTypedValue("assignees"), 
-            new TypedValue(new Long(AppianType.LIST_OF_USER_OR_GROUP), assignees)
-        );
+        map.put(stringTypedValue("assignees"),
+                new TypedValue(new Long(AppianType.LIST_OF_USER_OR_GROUP), assignees));
         map.put(stringTypedValue("completedTime"), timestampTypedValue(td.getCompletedTime()));
         map.put(stringTypedValue("deadline"), timestampTypedValue(td.getTaskDeadline()));
         map.put(stringTypedValue("elapsed"), doubleTypedValue(td.getElapsed()));
-        map.put(stringTypedValue("owners"), 
-            new TypedValue(new Long(AppianType.LIST_OF_USERNAME), td.getOwners())
-        );
+        map.put(stringTypedValue("owners"),
+                new TypedValue(new Long(AppianType.LIST_OF_USERNAME), td.getOwners()));
         map.put(stringTypedValue("processId"), intTypedValue(td.getProcessId()));
         map.put(stringTypedValue("processInitiator"), stringTypedValue(td.getProcessInitiator()));
         map.put(stringTypedValue("status"), intTypedValue(td.getStatus().longValue()));
