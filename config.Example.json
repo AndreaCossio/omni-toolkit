@@ -1,0 +1,102 @@
+{
+  "JarFile": "template.jar",
+  "Deploy": {
+    "Url": "url",
+    "ApiKey": "apiKey"
+  },
+  "Name": "Template Plugin",
+  "Key": "template-plugin",
+  "Info": {
+    "Description": "Template Plugin Description",
+    "Vendor": {
+      "Name": "TemplateVendor",
+      "Url": "TemplateUrl"
+    },
+    "Support": {
+      "Supported": "true",
+      "Email": "email@aa.it"
+    },
+    "Version": "1.0.0"
+  },
+  "FunctionCategories": [
+    {
+      "Key": "OmnitToolkitCategory",
+      "Name": "KP Tools"
+    }
+  ],
+  "Functions": [
+    {
+      "Key": "myFunction",
+      "Class": "my.MyFunction",
+      "Properties": [
+        {
+          "Name": "myfunction",
+          "Description": "This is my function",
+          "Params": [
+            {
+              "Name": "dictionary",
+              "Description": "Input Dictionary Description"
+            }
+          ]
+        },
+        {
+          "Name": "yourfunction",
+          "Description": "This is your function",
+          "Params": [
+            {
+              "Name": "document",
+              "Description": "Input Document Description"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "SmartServices": [
+    {
+      "Key": "mySmartService",
+      "Class": "my.MySmartService",
+      "Name": "My Smart Service",
+      "Params": [
+        {
+          "Type": "input",
+          "Name": "firstInput",
+          "Description": "First Input Description"
+        },
+        {
+          "Type": "input",
+          "Name": "folderInput",
+          "Description": "Folder Input Description"
+        },
+        {
+          "Type": "output",
+          "Name": "firstOutput",
+          "Description": "First Output Description"
+        }
+      ]
+    }
+  ],
+  "ConnectedSystems": [
+    {
+      "Key": "MyConnectedSystem",
+      "Class": "my.MyConnectedSystem",
+      "Name": "My Connected System",
+      "Description": "My Connected System Description",
+      "Integrations": [
+        {
+          "Key": "MyIntegration",
+          "Class": "my.MyIntegration",
+          "Name": "My Integration",
+          "Description": "My Integration Description"
+        }
+      ],
+      "ClientApis": [
+        {
+          "Key": "MyClientApi",
+          "Class": "my.MyClientApi",
+          "Name": "My Client Api"
+        }
+      ]
+    }
+  ]
+}

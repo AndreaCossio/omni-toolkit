@@ -1,0 +1,16 @@
+{
+    "java.project.referencedLibraries": [
+        "lib/**/*.jar",
+        "libs/appian-ix.jar",
+        "libs/appian-plug-in-sdk.jar",
+        "libs/appian-plug-in-sdk-17.2.jar",
+        "libs/appian-record.jar",
+        "libs/appian-record-2.jar",
+        "libs/appian-record-3.jar",
+        "libs/connected-systems-client.jar",
+        "libs/connected-systems-core.jar",
+        "libs/javax.persistence-api.jar",
+        "libs/log4j-1.2.17.jar",
+        "libs/missing.jar"
+    ]
+}

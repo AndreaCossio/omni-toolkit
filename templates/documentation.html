@@ -1,0 +1,59 @@
+{{define "./templates/documentation.html"}}
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>{{.Name}} - Documentation</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="">
+</head>
+
+<body>
+
+    <h1>
+        <strong>{{.Name}}</strong>
+    </h1>
+
+    <br>
+
+    {{if .Functions}}
+    <h2>Functions</h2>
+
+    {{range .Functions}}
+    {{range .Properties}}
+    <h3>
+        {{.Name}}
+    </h3>
+    <p>
+        {{.Description}}
+    <p>
+
+        {{if .Params}}
+
+    <p>
+        Inputs:
+    <p>
+    <ul>
+        {{range .Params}}
+        <li>
+            <p><strong>{{.Name}}</strong>: {{.Description}}</p>
+        </li>
+        {{end}}
+    </ul>
+
+    {{end}}
+
+
+    <br>
+
+    {{end}}
+    {{end}}
+
+    {{end}}
+
+</body>
+
+</html>
+{{end}}

@@ -1,0 +1,23 @@
+{{define "./templates/appian-plugin.xml"}}<appian-plugin name="{{.Name}}" key="{{.Key}}">
+{{with .Info}}
+    <plugin-info>
+        <description>{{.Description}}</description>
+        <vendor name="{{.Vendor.Name}}" url="{{.Vendor.Url}}" />
+        <support supported="{{.Support.Supported}}" email="{{.Support.Email}}" />
+        <version>{{.Version}}</version>
+        <application-version min="23.1.0"/>
+    </plugin-info>{{end}}
+{{if .FunctionCategories}}{{range .FunctionCategories}}
+    <function-category key="{{.Key}}" name="{{.Name}}" />
+{{end}}{{end}}{{range .Functions}}
+    <function key="{{.Key}}" class="{{.Class}}" />{{end}}
+{{range .SmartServices}}
+    <smart-service key="{{.Key}}" class="{{.Class}}" name="{{.Name}}" />{{end}}
+{{range .ConnectedSystems}}
+    <connected-system-template key="{{.Key}}" class="{{.Class}}" name="{{.Name}}" >{{range .Integrations}}
+        <integration-template key="{{.Key}}" class="{{.Class}}" name="{{.Name}}" />{{end}}{{range .ClientApis}}
+        <client-api key="{{.Key}}" class="{{.Class}}" name="{{.Name}}" />{{end}}
+    </connected-system-template>{{end}}
+
+</appian-plugin>
+{{end}}
