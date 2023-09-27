@@ -132,6 +132,7 @@ public class OTProcess {
     }
 
     @Function
+    @ProcessModelDataType
     public Long[] otGetProcessModelsForFolder(
             ProcessExecutionService pes,
             ProcessDesignService pds,

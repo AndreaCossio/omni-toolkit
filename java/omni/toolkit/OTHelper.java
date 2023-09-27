@@ -438,15 +438,14 @@ public class OTHelper {
         }
     }
 
-    /* Add content to application and return the contentId */
-    public static final Long addContentToApplication(
+    /* Add content to application */
+    public static final void addContentToApplication(
             ContentService cs,
             ApplicationService as,
-            Content contentToAdd,
+            Long contentId,
             Long application) {
         try {
             /* Add Content to Application */
-            final Long contentId = cs.create(contentToAdd, ContentConstants.UNIQUE_FOR_ALL);
             final String contentUuid = cs.getVersion(contentId, ContentConstants.VERSION_CURRENT)
                     .getUuid();
             if (application != null) {
@@ -454,10 +453,8 @@ public class OTHelper {
                 appInstance.addObjectsByType(AppianTypeLong.CONTENT_ITEM, new String[] { contentUuid });
                 as.save(appInstance);
             }
-            return contentId;
         } catch (Exception e) {
             logError(e.getMessage());
-            return null;
         }
     }
 }
