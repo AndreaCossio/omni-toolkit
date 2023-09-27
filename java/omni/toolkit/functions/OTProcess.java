@@ -7,10 +7,12 @@ import com.appiancorp.suiteapi.common.Name;
 import com.appiancorp.suiteapi.expression.PartialResult;
 import com.appiancorp.suiteapi.expression.annotations.Function;
 import com.appiancorp.suiteapi.expression.annotations.Parameter;
+import com.appiancorp.suiteapi.knowledge.FolderDataType;
 import com.appiancorp.suiteapi.process.ProcessDataType;
 import com.appiancorp.suiteapi.process.ProcessDesignService;
 import com.appiancorp.suiteapi.process.ProcessDetails;
 import com.appiancorp.suiteapi.process.ProcessExecutionService;
+import com.appiancorp.suiteapi.process.ProcessModel;
 import com.appiancorp.suiteapi.process.ProcessModelDataType;
 import com.appiancorp.suiteapi.process.ProcessSummary;
 import com.appiancorp.suiteapi.process.analytics2.ProcessAnalyticsService;
@@ -53,7 +55,7 @@ public class OTProcess {
 
         NamedTypedValue[] ntv = new NamedTypedValue[] {};
         PartialResult ps = pas.evaluateExpressionResultForProcess(processId, expression, recursive == true, ntv);
-        
+
         /* Return result */
         return ps.getResult();
     }
@@ -88,7 +90,8 @@ public class OTProcess {
             /* Filter and return processes */
             int statusToFilter = getProcessStatusFromString(status);
             if (statusToFilter != -1) {
-                return Arrays.stream(ps).filter(p -> (p.getStatus() == statusToFilter)).map(p -> p.getId()).toArray(Long[]::new);
+                return Arrays.stream(ps).filter(p -> (p.getStatus() == statusToFilter)).map(p -> p.getId())
+                        .toArray(Long[]::new);
             }
             return Arrays.stream(ps).map(p -> p.getId()).toArray(Long[]::new);
         } catch (Exception e) {
@@ -115,13 +118,79 @@ public class OTProcess {
     public TypedValue otGetProcessDetails(
             ProcessExecutionService pes,
             @Parameter @Name("processId") Long processId) {
-        
+
         try {
             /* Get process details */
             ProcessDetails pd = pes.getProcessDetails(processId);
 
             /* Return map with attributes */
             return new TypedValue((long) AppianType.MAP, OTHelper.createProcessAttributesMap(pd));
+        } catch (Exception e) {
+            OTHelper.logError(e.getMessage());
+            return null;
+        }
+    }
+
+    @Function
+    public Long[] otGetProcessModelsForFolder(
+            ProcessExecutionService pes,
+            ProcessDesignService pds,
+            @Parameter @Name("folderId") @FolderDataType Long folderId) {
+
+        try {
+
+            /* Get process model descriptors of the process models inside the folder */
+            ProcessModel.Descriptor[] pmDescriptors = (ProcessModel.Descriptor[]) pds.getProcessModelsForFolder(
+                    folderId, 0, Constants.COUNT_ALL, ProcessSummary.SORT_BY_PROCESS_MODEL_NAME,
+                    Constants.SORT_ORDER_ASCENDING).getResults();
+
+            /* Return a list with the process model ids */
+            return Arrays.stream(pmDescriptors).map(
+                    pmDescriptor -> pmDescriptor.getId())
+                    .toArray(Long[]::new);
+        } catch (Exception e) {
+            OTHelper.logError(e.getMessage());
+            return null;
+        }
+    }
+
+    @Function
+    public Long otGetProcessModelFolderForPm(
+            ProcessDesignService pds,
+            @Parameter @Name("processModelId") Long processModelId) {
+
+        try {
+            /* Return the folder id of the input process model */
+            return pds.getProcessModel(processModelId).getFolderId();
+        } catch (Exception e) {
+            OTHelper.logError(e.getMessage());
+            return null;
+        }
+    }
+
+    @Function
+    public String otGetProcessModelUuid(
+            ProcessDesignService pds,
+            @Parameter @Name("processModelId") Long processModelId) {
+
+        try {
+            /* Return the uuid of the input process model */
+            return pds.getProcessModel(processModelId).getUuid();
+        } catch (Exception e) {
+            OTHelper.logError(e.getMessage());
+            return null;
+        }
+    }
+
+    @Function
+    public String otGetProcessModelName(
+            ProcessDesignService pds,
+            @Parameter @Name("processModelId") Long processModelId,
+            @Parameter @Name("locale") String locale) {
+
+        try {
+            /* Return the name of the input process model */
+            return pds.getProcessModel(processModelId).getName().get(locale);
         } catch (Exception e) {
             OTHelper.logError(e.getMessage());
             return null;
