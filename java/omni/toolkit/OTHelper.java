@@ -26,17 +26,26 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
+import com.appiancorp.suiteapi.applications.Application;
+import com.appiancorp.suiteapi.applications.ApplicationService;
 import com.appiancorp.suiteapi.common.LocalObject;
+import com.appiancorp.suiteapi.common.Name;
 import com.appiancorp.suiteapi.content.Content;
 import com.appiancorp.suiteapi.content.ContentConstants;
 import com.appiancorp.suiteapi.content.ContentFilter;
 import com.appiancorp.suiteapi.content.ContentService;
 import com.appiancorp.suiteapi.content.exceptions.InvalidContentException;
 import com.appiancorp.suiteapi.content.exceptions.InvalidTypeMaskException;
+import com.appiancorp.suiteapi.expression.annotations.Parameter;
+import com.appiancorp.suiteapi.knowledge.FolderDataType;
 import com.appiancorp.suiteapi.process.ProcessDetails;
 import com.appiancorp.suiteapi.process.TaskDetails;
+import com.appiancorp.suiteapi.rules.FreeformRule;
 import com.appiancorp.suiteapi.type.AppianType;
+import com.appiancorp.suiteapi.type.NamedTypedValue;
+import com.appiancorp.suiteapi.type.TypeService;
 import com.appiancorp.suiteapi.type.TypedValue;
+import com.appiancorp.type.AppianTypeLong;
 
 public class OTHelper {
     /* Logger */
@@ -72,8 +81,8 @@ public class OTHelper {
     public static final String toCamelCase(String text) {
         String[] parts = text.split("_");
         String camelCaseString = "";
-        for (int i=0; i<parts.length; i++) {
-            if (i==0) {
+        for (int i = 0; i < parts.length; i++) {
+            if (i == 0) {
                 camelCaseString = camelCaseString + parts[i].toLowerCase();
             } else {
                 camelCaseString = camelCaseString + toProperCase(parts[i]);
@@ -213,12 +222,12 @@ public class OTHelper {
     /* Convert table info to xsd */
     public static final String getTableXsd(Context ctx, String dataSource, String tableName, String targetNamespace,
             String name, String description) {
-        
+
         /* Vars */
         Connection conn = null;
         ResultSet rsColumns = null;
         Document xsdDoc = null;
-                
+
         /* Connection to db */
         try {
             conn = getConnection(ctx, dataSource);
@@ -306,12 +315,14 @@ public class OTHelper {
             if (rsColumns != null) {
                 try {
                     rsColumns.close();
-                } catch (SQLException e) { /* Ignored */}
+                } catch (SQLException e) {
+                    /* Ignored */}
             }
             if (conn != null) {
                 try {
                     conn.close();
-                } catch (SQLException e) { /* Ignored */}
+                } catch (SQLException e) {
+                    /* Ignored */}
             }
         }
 
@@ -367,12 +378,12 @@ public class OTHelper {
         map.put(stringTypedValue("acceptedTime"), timestampTypedValue(td.getAcceptedTime()));
         map.put(stringTypedValue("assignedTime"), timestampTypedValue(td.getAssignedTime()));
         map.put(stringTypedValue("assignees"),
-                new TypedValue(new Long(AppianType.LIST_OF_USER_OR_GROUP), assignees));
+                new TypedValue((long) AppianType.LIST_OF_USER_OR_GROUP, assignees));
         map.put(stringTypedValue("completedTime"), timestampTypedValue(td.getCompletedTime()));
         map.put(stringTypedValue("deadline"), timestampTypedValue(td.getTaskDeadline()));
         map.put(stringTypedValue("elapsed"), doubleTypedValue(td.getElapsed()));
         map.put(stringTypedValue("owners"),
-                new TypedValue(new Long(AppianType.LIST_OF_USERNAME), td.getOwners()));
+                new TypedValue((long) AppianType.LIST_OF_USERNAME, td.getOwners()));
         map.put(stringTypedValue("processId"), intTypedValue(td.getProcessId()));
         map.put(stringTypedValue("processInitiator"), stringTypedValue(td.getProcessInitiator()));
         map.put(stringTypedValue("status"), intTypedValue(td.getStatus().longValue()));
@@ -380,5 +391,70 @@ public class OTHelper {
         map.put(stringTypedValue("displayName"), stringTypedValue(td.getDisplayName()));
         map.put(stringTypedValue("priority"), stringTypedValue(td.getPriority().getDescription()));
         return map;
+    }
+
+    /* Create and return a FreeFormRule instance */
+    public static final FreeformRule createFreeFormRule(
+            TypeService ts,
+            @Parameter @Name("name") String name,
+            @Parameter @Name("description") String description,
+            @Parameter @Name("ruleDefinition") String freeFormRuleDefinition,
+            @Parameter @Name("folder") @FolderDataType Long folder,
+            @Parameter(required = false) @Name("ruleInputs") TypedValue ruleInputs) {
+        try {
+            /* Create Rule Expression */
+            FreeformRule freeFormRule = new FreeformRule() {
+            };
+            freeFormRule.setName(name);
+            freeFormRule.setDescription(description);
+            freeFormRule.setParent(folder);
+            freeFormRule.addVisibility(ContentConstants.VIS_DEFAULT);
+            freeFormRule.setSecurity(ContentConstants.SEC_INH_ALL);
+
+            /* Set definition */
+            freeFormRule.setDefinition(freeFormRuleDefinition);
+
+            /* Set rule inputs */
+            HashMap<TypedValue, TypedValue> ruleInputMap = (HashMap<TypedValue, TypedValue>) ts
+                    .cast((long) AppianType.DICTIONARY, ruleInputs).getValue();
+            ArrayList<NamedTypedValue> ntvsList = new ArrayList<NamedTypedValue>();
+            for (TypedValue ruleInputName : ruleInputMap.keySet()) {
+                NamedTypedValue ntv = new NamedTypedValue(
+                        new TypedValue((long) ruleInputMap.get(ruleInputName).getValue(), null),
+                        ruleInputName.getValue().toString());
+                ntvsList.add(ntv);
+            }
+            NamedTypedValue[] ntvs = new NamedTypedValue[ntvsList.size()];
+            for (int i = 0; i < ntvsList.size(); i++) {
+                ntvs[i] = ntvsList.get(i);
+            }
+            freeFormRule.setParams(ntvs);
+
+            return freeFormRule;
+
+        } catch (Exception e) {
+            OTHelper.logError(e.getMessage());
+            return null;
+        }
+    }
+
+    /* Add content to application */
+    public static final void addContentToApplication(
+            ContentService cs,
+            ApplicationService as,
+            Long contentId,
+            Long application) {
+        try {
+            /* Add Content to Application */
+            final String contentUuid = cs.getVersion(contentId, ContentConstants.VERSION_CURRENT)
+                    .getUuid();
+            if (application != null) {
+                final Application appInstance = as.getApplication(application);
+                appInstance.addObjectsByType(AppianTypeLong.CONTENT_ITEM, new String[] { contentUuid });
+                as.save(appInstance);
+            }
+        } catch (Exception e) {
+            logError(e.getMessage());
+        }
     }
 }
