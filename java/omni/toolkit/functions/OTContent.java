@@ -18,8 +18,10 @@ import com.appiancorp.suiteapi.process.ApplicationDataType;
 import com.appiancorp.suiteapi.process.ProcessDesignService;
 import com.appiancorp.suiteapi.process.ProcessModelFolder;
 import com.appiancorp.suiteapi.rules.Constant;
+import com.appiancorp.suiteapi.rules.FreeformRule;
 import com.appiancorp.suiteapi.rules.RulesFolder;
 import com.appiancorp.suiteapi.type.AppianType;
+import com.appiancorp.suiteapi.type.TypeService;
 import com.appiancorp.suiteapi.type.TypedValue;
 import com.appiancorp.type.AppianTypeLong;
 
@@ -133,16 +135,9 @@ public class OTContent {
             cons.setParent(folder);
             cons.setSecurity(ContentConstants.SEC_INH_ALL);
 
-            /* Add constant on Application */
             Long constantId = cs.create(cons, ContentConstants.UNIQUE_FOR_ALL);
-            String constantUuid = cs.getVersion(constantId, ContentConstants.VERSION_CURRENT).getUuid();
-            if (application != null) {
-                final Application appInstance = as.getApplication(application);
-                appInstance.addObjectsByType(AppianTypeLong.CONTENT_ITEM, new String[] { constantUuid });
-                as.save(appInstance);
-            }
-
-            /* Return constantId */
+            /* Add to application and return constantId */
+            OTHelper.addContentToApplication(cs, as, constantId, application);
             return constantId;
         } catch (Exception e) {
             OTHelper.logError(e.getMessage());
@@ -182,16 +177,9 @@ public class OTContent {
                 outStr.close();
             }
 
-            /* Add document on Application */
+            /* Add to application and return documentId */
             Long documentId = outStr.getContentId();
-            String documentUuid = cs.getVersion(documentId, ContentConstants.VERSION_CURRENT).getUuid();
-            if (application != null) {
-                final Application appInstance = as.getApplication(application);
-                appInstance.addObjectsByType(AppianTypeLong.CONTENT_ITEM, new String[] { documentUuid });
-                as.save(appInstance);
-            }
-
-            /* Return constantId */
+            OTHelper.addContentToApplication(cs, as, documentId, application);
             return documentId;
         } catch (Exception e) {
             OTHelper.logError(e.getMessage());
@@ -217,16 +205,9 @@ public class OTContent {
             newFolder.setParent(folder);
             newFolder.setSecurity(ContentConstants.SEC_INH_ALL);
 
-            /* Add folder on Application */
+            /* Add to applicatoin and return folderId */
             Long newFolderId = cs.create(newFolder, ContentConstants.UNIQUE_FOR_ALL);
-            String newFolderUuid = cs.getVersion(newFolderId, ContentConstants.VERSION_CURRENT).getUuid();
-            if (application != null) {
-                final Application appInstance = as.getApplication(application);
-                appInstance.addObjectsByType(AppianTypeLong.CONTENT_ITEM, new String[] { newFolderUuid });
-                as.save(appInstance);
-            }
-
-            /* Return folderId */
+            OTHelper.addContentToApplication(cs, as, newFolderId, application);
             return newFolderId;
         } catch (Exception e) {
             OTHelper.logError(e.getMessage());
@@ -252,16 +233,9 @@ public class OTContent {
             newApplication.setParent(folder);
             newApplication.setSecurity(ContentConstants.SEC_INH_ALL);
 
-            /* Add folder on Application */
+            /* Add to application and return folderId */
             Long newApplicationId = cs.create(newApplication, ContentConstants.UNIQUE_FOR_ALL);
-            String newApplicationUuid = cs.getVersion(newApplicationId, ContentConstants.VERSION_CURRENT).getUuid();
-            if (application != null) {
-                final Application appInstance = as.getApplication(application);
-                appInstance.addObjectsByType(AppianTypeLong.CONTENT_ITEM, new String[] { newApplicationUuid });
-                as.save(appInstance);
-            }
-
-            /* Return folderId */
+            OTHelper.addContentToApplication(cs, as, newApplicationId, application);
             return newApplicationId;
         } catch (Exception e) {
             OTHelper.logError(e.getMessage());
@@ -287,16 +261,9 @@ public class OTContent {
             newKcFolder.setParent(folder);
             newKcFolder.setSecurity(ContentConstants.SEC_INH_ALL);
 
-            /* Add folder on Application */
             Long newKcFolderId = cs.create(newKcFolder, ContentConstants.UNIQUE_FOR_ALL);
-            String newKcFolderUuid = cs.getVersion(newKcFolderId, ContentConstants.VERSION_CURRENT).getUuid();
-            if (application != null) {
-                final Application appInstance = as.getApplication(application);
-                appInstance.addObjectsByType(AppianTypeLong.CONTENT_ITEM, new String[] { newKcFolderUuid });
-                as.save(appInstance);
-            }
-
-            /* Return folderId */
+            /* Add to application and return folderId */
+            OTHelper.addContentToApplication(cs, as, newKcFolderId, application);
             return newKcFolderId;
         } catch (Exception e) {
             OTHelper.logError(e.getMessage());
@@ -323,15 +290,89 @@ public class OTContent {
             /* Add folder on Application */
             ProcessModelFolder createdPmf = pds.createFolder(pmf);
             Long pmfId = createdPmf.getId();
-            String pmfUuid = cs.getVersion(pmfId, ContentConstants.VERSION_CURRENT).getUuid();
+            String pmfUuid = createdPmf.getUuid();
             if (application != null) {
                 final Application appInstance = as.getApplication(application);
-                appInstance.addObjectsByType(AppianTypeLong.CONTENT_ITEM, new String[] { pmfUuid });
+                appInstance.addObjectsByType(AppianTypeLong.PROCESS_MODEL_FOLDER, new String[] { pmfUuid });
                 as.save(appInstance);
             }
 
             /* Return folderId */
             return pmfId;
+        } catch (Exception e) {
+            OTHelper.logError(e.getMessage());
+            return null;
+        }
+    }
+
+    @Function
+    public Long otCreateRuleExpression(
+            ContentService cs,
+            ApplicationService as,
+            TypeService ts,
+            @Parameter @Name("name") String name,
+            @Parameter @Name("description") String description,
+            @Parameter @Name("ruleDefinition") String ruleDefinition,
+            @Parameter @Name("folder") @FolderDataType Long folder,
+            @Parameter(required = false) @Name("ruleInputs") TypedValue ruleInputs,
+            @Parameter(required = false) @Name("application") @ApplicationDataType Long application) {
+
+        try {
+            /* Create Rule Expression */
+            FreeformRule freeFormRule = OTHelper.createFreeFormRule(ts, name, description, ruleDefinition, folder,
+                    ruleInputs);
+            freeFormRule.setSubtype(ContentConstants.SUBTYPE_RULE_FREEFORM);
+
+            Long ruleExressionId = cs.create(freeFormRule, ContentConstants.UNIQUE_FOR_ALL);
+            /* Add to application and return contentId */
+            OTHelper.addContentToApplication(cs, as, ruleExressionId, application);
+            return ruleExressionId;
+        } catch (Exception e) {
+            OTHelper.logError(e.getMessage());
+            return null;
+        }
+    }
+
+    @Function
+    public Long otCreateInterface(
+            ContentService cs,
+            ApplicationService as,
+            TypeService ts,
+            @Parameter @Name("name") String name,
+            @Parameter @Name("description") String description,
+            @Parameter @Name("interfaceDefinition") String interfaceDefinition,
+            @Parameter @Name("folder") @FolderDataType Long folder,
+            @Parameter(required = false) @Name("ruleInputs") TypedValue ruleInputs,
+            @Parameter(required = false) @Name("application") @ApplicationDataType Long application) {
+
+        try {
+            /* Create Interface */
+            FreeformRule freeFormRule = OTHelper.createFreeFormRule(ts, name, description, interfaceDefinition,
+                    folder,
+                    ruleInputs);
+            freeFormRule.setSubtype(ContentConstants.SUBTYPE_RULE_INTERFACE);
+
+            Long interfaceId = cs.create(freeFormRule, ContentConstants.UNIQUE_FOR_ALL);
+            /* Add to application and return contentId */
+            OTHelper.addContentToApplication(cs, as, interfaceId, application);
+            return interfaceId;
+        } catch (Exception e) {
+            OTHelper.logError(e.getMessage());
+            return null;
+        }
+    }
+
+    @Function
+    public String otGetContentUuidById(
+            ContentService cs,
+            @Parameter @Name("contentId") Long contentId) {
+
+        try {
+            /* Retrieve last verion of content */
+            Content content = cs.getVersion(contentId, ContentConstants.VERSION_CURRENT);
+
+            /* Return content uuid */
+            return content.getUuid();
         } catch (Exception e) {
             OTHelper.logError(e.getMessage());
             return null;

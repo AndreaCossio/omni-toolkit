@@ -46,11 +46,12 @@ public class OTUpdateDataType extends AppianSmartService {
     }
 
     @Override
-    public void run() throws SmartServiceException  {
-        
+    public void run() throws SmartServiceException {
+
         /* XSD of the table */
-        String xsd = OTHelper.getTableXsd(this.context, this.dataSource, this.tableName, this.targetNamespace, this.name, this.description);
-        
+        String xsd = OTHelper.getTableXsd(this.context, this.dataSource, this.tableName, this.targetNamespace,
+                this.name, this.description);
+
         try {
 
             /* Exit if null */
@@ -104,10 +105,10 @@ public class OTUpdateDataType extends AppianSmartService {
         this.description = description;
     }
 
-	private SmartServiceException createException(Throwable t) {
-		SmartServiceException.Builder b = new SmartServiceException.Builder(getClass(), t);
-		b.userMessage(t.getMessage());
-		b.addCauseToUserMessageArgs();
-		return b.build();
-	}
+    private SmartServiceException createException(Throwable t) {
+        SmartServiceException.Builder b = new SmartServiceException.Builder(getClass(), t);
+        b.userMessage(t.getMessage());
+        b.addCauseToUserMessageArgs();
+        return b.build();
+    }
 }
