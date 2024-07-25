@@ -18,12 +18,13 @@ import com.appiancorp.suiteapi.process.palette.PaletteInfo;
 import com.appiancorp.type.AppianTypeLong;
 
 import omni.toolkit.OTHelper;
+import omni.toolkit.functions.OTContent;
 
 import com.appiancorp.suiteapi.process.framework.Order;
 
-@PaletteInfo(paletteCategory="#Deprecated#", palette="#Deprecated#")
+@PaletteInfo(paletteCategory = PaletteCategoryConstants.AUTOMATION_SMART_SERVICES, palette = "Omni Toolkit")
 @Order({ "Name", "Content", "Extension", "Description", "Folder", "Application" })
-public class OTCreateDocument extends AppianSmartService {
+public class OTCreateDocument_V2 extends AppianSmartService {
 
     /* Service */
     private final ContentService contentService;
@@ -36,15 +37,18 @@ public class OTCreateDocument extends AppianSmartService {
     private String description;
     private Long folder;
     private Long application;
+    private String encoding;
 
     /* Out */
     private Long documentId;
     private String documentUuid;
 
-    public OTCreateDocument(ContentService cs, ApplicationService as) {
+    public OTCreateDocument_V2(ContentService cs, ApplicationService as) {
         this.contentService = cs;
         this.applicationService = as;
     }
+
+    OTContent o = new OTContent();
 
     @Override
     public void run() throws SmartServiceException {
@@ -53,22 +57,17 @@ public class OTCreateDocument extends AppianSmartService {
         doc.setSecurity(ContentConstants.SEC_INH_ALL);
 
         try {
-            ContentUploadOutputStream outStr = this.contentService.uploadDocument(doc, ContentConstants.UNIQUE_FOR_ALL);
-            byte[] fileContentBytes = this.content.getBytes();
-            try {
-                outStr.write(fileContentBytes);
-                outStr.flush();
-            } finally {
-                outStr.close();
-            }
-
-            this.documentId = outStr.getContentId();
+            this.documentId = o.otCreateDocument(
+                    this.contentService,
+                    this.applicationService,
+                    this.name,
+                    this.content,
+                    this.extension,
+                    this.description,
+                    this.folder,
+                    this.application,
+                    this.encoding);
             this.documentUuid = this.contentService.getVersion(documentId, ContentConstants.VERSION_CURRENT).getUuid();
-            if (this.application != null) {
-                final Application appInstance = this.applicationService.getApplication(this.application);
-                appInstance.addObjectsByType(AppianTypeLong.CONTENT_ITEM, new String[] { documentUuid });
-                this.applicationService.save(appInstance);
-            }
         } catch (Exception e) {
             OTHelper.logError(e.getMessage());
             throw createException(e);
@@ -115,6 +114,11 @@ public class OTCreateDocument extends AppianSmartService {
     @ApplicationDataType
     public void setApplication(Long application) {
         this.application = application;
+    }
+
+    @Input(required = Required.OPTIONAL)
+    public void setEncoding(String encoding) {
+        this.encoding = encoding;
     }
 
     private SmartServiceException createException(Throwable t) {

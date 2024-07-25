@@ -154,7 +154,8 @@ public class OTContent {
             @Parameter @Name("extension") String extension,
             @Parameter @Name("description") String description,
             @Parameter @Name("folder") @FolderDataType Long folder,
-            @Parameter(required = false) @Name("application") @ApplicationDataType Long application) {
+            @Parameter(required = false) @Name("application") @ApplicationDataType Long application,
+            @Parameter(required = false) @Name("encoding") @ApplicationDataType String encoding) {
 
         /* Early exit */
         if (name == null || extension == null || folder == null) {
@@ -169,7 +170,18 @@ public class OTContent {
 
             /* Upload to Appian and write content */
             ContentUploadOutputStream outStr = cs.uploadDocument(doc, ContentConstants.UNIQUE_FOR_ALL);
-            byte[] fileContentBytes = content.getBytes();
+            byte[] fileContentBytes;
+
+            /* Different encoding */
+            switch (encoding) {
+                case "base64":
+                    fileContentBytes = java.util.Base64.getDecoder().decode(content);
+                    break;
+                default:
+                    fileContentBytes = content.getBytes();
+                    break;
+            }
+
             try {
                 outStr.write(fileContentBytes);
                 outStr.flush();
